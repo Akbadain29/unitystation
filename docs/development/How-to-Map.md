@@ -14,12 +14,24 @@ You should have the following windows open. To open a window, go to the _Window_
 
 ### Introduction to Scenes
 Unity uses [scenes](https://docs.unity3d.com/Manual/CreatingScenes.html) to define environments and menus. Let's look at one.
-* Open an existing scene: UnityProject > Assets > Scenes > Mainstations > OutpostStation
+* Open an existing scene: UnityProject > Assets > Scenes > Mainstations > TestStation
 * Make sure you have your Scene window focused
 * Look around the Scene with the [Hand Tool](https://docs.unity3d.com/Manual/SceneViewNavigation.html)
-
-Notice that in the Hierarchy window selecting _OutpostStation_ selects the entire station, but not other shuttles, etc.
+* To move an individual prefab within the Scene, select the [Move Tool](https://docs.unity3d.com/Manual/SceneViewNavigation.html)
+Notice that in the Hierarchy window selecting _TestStation_ selects the entire station, but not other shuttles, etc.
 You can save maps and areas as [prefabs](https://docs.unity3d.com/Manual/Prefabs.html) by dragging them from the Hierarchy tab into the Project tab.
+
+## Getting Started
+The processing of mapping depending on what type of scene you are mapping. In UnityStation, scenes are divided into the following scriptable objects:
+
+Main Stations – where all the crew spawns at the start of the round
+
+Away Sites – on the MainStation there is a portal which connects to one of these scenes which the player then jump when the connection is established in the middle of the round.
+
+Additional Scenes – the scenes which the antagonists start on.
+Here is a handy diagram which you can use if you want to add a new antagonist or job and ensure that it updates across all the scenes.
+ 
+<insert picture>
 
 ### Tile Palette
 * The Tile Palette tab lets you place walls, floors, doors, tables etc. into the Scene tab
