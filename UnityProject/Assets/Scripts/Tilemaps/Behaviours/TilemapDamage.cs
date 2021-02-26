@@ -76,18 +76,22 @@ public class TilemapDamage : MonoBehaviour, IFireExposable
 	private float AddDamage(float damage, AttackType attackType, MetaDataNode data,
 		BasicTile basicTile, Vector3 worldPosition)
 	{
-		if (basicTile.indestructible)
+		if (basicTile.indestructible || damage < basicTile.damageDeflection)
 		{
 			return 0;
 		}
 
-		var damageTaken = basicTile.Armor.GetDamage(damage < basicTile.damageDeflection ? 0 : damage, attackType);
+		var damageTaken = basicTile.Armor.GetDamage(damage, attackType);
 
 		data.AddTileDamage(Layer.LayerType, damageTaken);
 
-		if(basicTile.SoundOnHit.AssetAddress != null)
-			SoundManager.PlayNetworkedAtPos(basicTile.SoundOnHit, worldPosition);
-		else{
+		if(basicTile.SoundOnHit != null && !string.IsNullOrEmpty(basicTile.SoundOnHit.AssetAddress) && basicTile.SoundOnHit.AssetAddress != "null")
+		{
+			if(damage >= 1)
+				SoundManager.PlayNetworkedAtPos(basicTile.SoundOnHit, worldPosition);
+		}
+		else
+		{
 			Logger.LogError($"Tried to play SoundOnHit for {basicTile.DisplayName}, but it was null!", Category.Addressables);
 		}
 
@@ -163,6 +167,11 @@ public class TilemapDamage : MonoBehaviour, IFireExposable
 		if (basicTile.MaxHealth < basicTile.MaxHealth - totalDamageTaken)
 		{
 			data.ResetDamage(Layer.LayerType);
+		}
+
+		if (damageTaken > totalDamageTaken){
+			Logger.LogError($"Applying damage to {basicTile.DisplayName} increased the damage to be dealt, when it should have decreased!", Category.TileMaps);
+			return totalDamageTaken;
 		}
 
 		//Return how much damage is left
