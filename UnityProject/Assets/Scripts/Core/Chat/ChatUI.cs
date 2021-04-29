@@ -1,12 +1,13 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using System;
 using AdminTools;
-using System.Linq;
+using UI;
 
+// TODO: namespace me
 public class ChatUI : MonoBehaviour
 {
 	public static ChatUI Instance;
@@ -154,13 +155,13 @@ public class ChatUI : MonoBehaviour
 		// Make sure the window and channel panel start disabled
 		chatInputWindow.SetActive(false);
 		//channelPanel.gameObject.SetActive(false);
-		EventManager.AddHandler(EVENT.UpdateChatChannels, OnUpdateChatChannels);
+		EventManager.AddHandler(Event.UpdateChatChannels, OnUpdateChatChannels);
 		chatFilter = GetComponent<ChatFilter>();
 	}
 
 	private void OnDestroy()
 	{
-		EventManager.RemoveHandler(EVENT.UpdateChatChannels, OnUpdateChatChannels);
+		EventManager.RemoveHandler(Event.UpdateChatChannels, OnUpdateChatChannels);
 	}
 
 	private void Update()
@@ -337,7 +338,7 @@ public class ChatUI : MonoBehaviour
 		parsedInput = Chat.ParsePlayerInput(InputFieldChat.text, chatContext);
 		if (Chat.IsValidToSend(parsedInput.ClearMessage))
 		{
-			SoundManager.Play(SingletonSOSounds.Instance.Click01);
+			_ = SoundManager.Play(SingletonSOSounds.Instance.Click01);
 			PlayerSendChat(parsedInput.ClearMessage);
 		}
 
@@ -361,7 +362,7 @@ public class ChatUI : MonoBehaviour
 
 	public void OnChatCancel()
 	{
-		SoundManager.Play(SingletonSOSounds.Instance.Click01);
+		_ = SoundManager.Play(SingletonSOSounds.Instance.Click01);
 		InputFieldChat.text = "";
 		CloseChatWindow();
 	}
@@ -397,7 +398,7 @@ public class ChatUI : MonoBehaviour
 		}
 		// Otherwise use the previously selected channels again
 
-		EventManager.Broadcast(EVENT.ChatFocused);
+		EventManager.Broadcast(Event.ChatFocused);
 		chatInputWindow.SetActive(true);
 		background.SetActive(true);
 		UIManager.IsInputFocus = true; // should work implicitly with InputFieldFocus
@@ -412,7 +413,7 @@ public class ChatUI : MonoBehaviour
 		StartCoroutine(WindowCoolDown());
 		UIManager.IsInputFocus = false;
 		chatInputWindow.SetActive(false);
-		EventManager.Broadcast(EVENT.ChatUnfocused);
+		EventManager.Broadcast(Event.ChatUnfocused);
 		background.SetActive(false);
 		UIManager.PreventChatInput = false;
 
@@ -445,7 +446,7 @@ public class ChatUI : MonoBehaviour
 	public void Toggle_ChannelPanel()
 	{
 		showChannels = !showChannels;
-		SoundManager.Play(SingletonSOSounds.Instance.Click01);
+		_ = SoundManager.Play(SingletonSOSounds.Instance.Click01);
 		if (showChannels)
 		{
 			channelPanel.gameObject.SetActive(true);
@@ -521,7 +522,7 @@ public class ChatUI : MonoBehaviour
 		radioEntry.GetComponentInChildren<Text>().text = channel.ToString();
 		radioEntry.GetComponentInChildren<Button>().onClick.AddListener(() =>
 		{
-			SoundManager.Play(SingletonSOSounds.Instance.Click01);
+			_ = SoundManager.Play(SingletonSOSounds.Instance.Click01);
 			DisableChannel(channel);
 		});
 		// Add it to a list for easy access later
@@ -589,7 +590,7 @@ public class ChatUI : MonoBehaviour
 
 	public void Toggle_Channel(bool turnOn)
 	{
-		SoundManager.Play(SingletonSOSounds.Instance.Click01);
+		_ = SoundManager.Play(SingletonSOSounds.Instance.Click01);
 		GameObject curObject = EventSystem.current.currentSelectedGameObject;
 		if (!curObject)
 		{

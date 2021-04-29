@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using UnityEngine;
-using WebSocketSharp;
 using Systems.Mob;
 using Random = UnityEngine.Random;
 
@@ -17,9 +16,8 @@ namespace Systems.MobAIs
 
 		protected override void Awake()
 		{
-			base.Awake();
 			simpleAnimal = GetComponent<SimpleAnimal>();
-			BeginExploring();
+			base.Awake();
 		}
 
 		protected override void DoRandomAction()
@@ -44,7 +42,7 @@ namespace Systems.MobAIs
 			}
 
 			Spawn.ServerPrefab(xenomorph, gameObject.transform.position);
-			Despawn.ServerSingle(gameObject);
+			_ = Despawn.ServerSingle(gameObject);
 		}
 
 		protected override void OnAttackReceived(GameObject damagedBy = null)

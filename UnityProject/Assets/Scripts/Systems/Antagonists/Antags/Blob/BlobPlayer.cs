@@ -3,12 +3,9 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using DatabaseAPI;
 using Light2D;
 using Mirror;
 using UnityEngine;
-using TMPro;
 using AddressableReferences;
 using Random = UnityEngine.Random;
 using EpPathFinding.cs;
@@ -269,7 +266,7 @@ namespace Blob
 
 		private void PeriodicUpdate()
 		{
-			if (!CustomNetworkManager.IsServer) return;
+			if (CustomNetworkManager.IsServer == false) return;
 
 			timer += 1f;
 			econTimer += 1f;
@@ -277,7 +274,7 @@ namespace Blob
 			healthTimer += 1f;
 			rerollTimer += 1f;
 
-			//Force overmind back to blob if camera moves too far
+			// Force overmind back to blob if camera moves too far
 			if (!teleportCheck && !victory && !ValidateAction(playerSync.ServerPosition, true) && blobCore != null)
 			{
 				teleportCheck = true;
@@ -287,7 +284,7 @@ namespace Blob
 
 			nonSpaceBlobTiles.Remove(null);
 
-			//Count number of blob tiles
+			// Count number of blob tiles
 			numOfNonSpaceBlobTiles = nonSpaceBlobTiles.Count;
 			numOfBlobTiles = blobTiles.Count;
 
@@ -309,7 +306,7 @@ namespace Blob
 					string.Format(ReportTemplates.BioHazard,
 						"Caution! Biohazard expanding rapidly. Station structural integrity failing."),
 					MatrixManager.MainStationMatrix);
-				SoundManager.PlayNetworked(SingletonSOSounds.Instance.Notice1);
+				_ = SoundManager.PlayNetworked(SingletonSOSounds.Instance.Notice1);
 			}
 
 			if (isBlobGamemode && !nearlyWon && numOfNonSpaceBlobTiles >= numOfTilesForVictory / 1.25)
@@ -320,17 +317,17 @@ namespace Blob
 					string.Format(ReportTemplates.BioHazard,
 						"Alert! Station integrity near critical. Biomass sensor levels are off the charts."),
 					MatrixManager.MainStationMatrix);
-				SoundManager.PlayNetworked(SingletonSOSounds.Instance.Notice1);
+				_ = SoundManager.PlayNetworked(SingletonSOSounds.Instance.Notice1);
 			}
 
-			//Blob wins after number of blob tiles reached
+			// Blob wins after number of blob tiles reached
 			if (!victory && numOfNonSpaceBlobTiles >= numOfTilesForVictory)
 			{
 				victory = true;
 				BlobWins();
 			}
 
-			//Detection check
+			// Detection check
 			if (!announcedBlob && (timer >= announceAfterSeconds || numOfBlobTiles >= numOfTilesForDetection))
 			{
 				announcedBlob = true;
@@ -339,7 +336,7 @@ namespace Blob
 					string.Format(ReportTemplates.BioHazard,
 						"Confirmed outbreak of level 5 biohazard aboard the station. All personnel must contain the outbreak."),
 					MatrixManager.MainStationMatrix);
-				SoundManager.PlayNetworked(Outbreak5);
+				_ = SoundManager.PlayNetworked(Outbreak5);
 			}
 
 			if (rerollTimer > 300f)
@@ -952,15 +949,15 @@ namespace Blob
 
 		private void PlaceStrongReflective(GameObject prefab, BlobStructure originalBlob, int cost, Vector3Int worldPos, string msg)
 		{
-			if (!ValidateCost(cost, prefab)) return;
+			if (ValidateCost(cost, prefab) == false) return;
 
 			var result = Spawn.ServerPrefab(prefab, worldPos, gameObject.transform);
 
-			if (!result.Successful) return;
+			if (result.Successful == false) return;
 
 			Chat.AddExamineMsgFromServer(gameObject, msg);
 
-			Despawn.ServerSingle(originalBlob.gameObject);
+			_ = Despawn.ServerSingle(originalBlob.gameObject);
 
 			var structure = result.GameObject.GetComponent<BlobStructure>();
 			structure.overmindName = overmindName;
@@ -1062,7 +1059,7 @@ namespace Blob
 							break;
 					}
 
-					Despawn.ServerSingle(blob.gameObject);
+					_ = Despawn.ServerSingle(blob.gameObject);
 
 					structure.location = worldPos;
 					SetStrainData(structure);
@@ -1075,7 +1072,7 @@ namespace Blob
 				}
 			}
 
-			//No normal blob at tile
+			// No normal blob at tile
 			Chat.AddExamineMsgFromServer(gameObject, "You need to place a normal blob first");
 		}
 
@@ -1113,7 +1110,7 @@ namespace Blob
 
 		private void InternalRemoveBlob(Vector3Int worldPos)
 		{
-			if (!blobTiles.TryGetValue(worldPos, out var blob) || blob == null)
+			if (blobTiles.TryGetValue(worldPos, out var blob) == false || blob == null)
 			{
 				Chat.AddExamineMsgFromServer(gameObject, "No blob to be removed");
 			}
@@ -1152,7 +1149,7 @@ namespace Blob
 				Chat.AddExamineMsgFromServer(gameObject, $"Blob removed, {AddToResources(returnCost)} biomass refunded");
 
 				nonSpaceBlobTiles.Remove(blob.gameObject);
-				Despawn.ServerSingle(blob.gameObject);
+				_ = Despawn.ServerSingle(blob.gameObject);
 				blobTiles.TryRemove(worldPos, out var empty);
 			}
 		}
@@ -1178,18 +1175,18 @@ namespace Blob
 
 		public void Death(DestructionInfo info = null)
 		{
-			if(!CustomNetworkManager.IsServer || hasDied) return;
+			if (CustomNetworkManager.IsServer == false || hasDied) return;
 
 			hasDied = true;
 
 			coreHealth.OnWillDestroyServer.RemoveListener(Death);
 
-			//Destroy all blob tiles
+			// Destroy all blob tiles
 			foreach (var tile in blobTiles)
 			{
 				if (tile.Value != null)
 				{
-					Despawn.ServerSingle(tile.Value.gameObject);
+					_ = Despawn.ServerSingle(tile.Value.gameObject);
 				}
 			}
 
@@ -1218,7 +1215,7 @@ namespace Blob
 				GameManager.Instance.EndRound();
 			}
 
-			Despawn.ServerSingle(gameObject);
+			_ = Despawn.ServerSingle(gameObject);
 		}
 
 		#endregion

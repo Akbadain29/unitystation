@@ -8,6 +8,8 @@ using Messages.Server;
 using Mirror;
 using UnityEngine;
 using UnityEngine.Serialization;
+using Systems.Electricity.NodeModules;
+using Objects.Lighting;
 
 namespace Objects.Engineering
 {
@@ -35,7 +37,7 @@ namespace Objects.Engineering
 		[SerializeField] [Tooltip("Currently unused! If true, this APC will power environment.")]
 		private bool powerEnvironment = true;
 
-		private int cashOfConnectedDevices;
+		private int cacheOfConnectedDevices;
 		private bool batteryCharging;
 
 		public float Voltage => voltageSync;
@@ -61,6 +63,8 @@ namespace Objects.Engineering
 			UpdateDisplay();
 		}
 
+		#region Lifecycyle
+
 		private void Awake()
 		{
 			electricalNodeControl = GetComponent<ElectricalNodeControl>();
@@ -75,7 +79,7 @@ namespace Objects.Engineering
 		private void CheckListOfDevicesForNulls()
 		{
 			if (connectedDevices.Count == 0) return;
-			for (int i = connectedDevices.Count -1; i >= 0; i--)
+			for (int i = connectedDevices.Count - 1; i >= 0; i--)
 			{
 				if (connectedDevices[i] != null)
 				{
@@ -95,19 +99,13 @@ namespace Objects.Engineering
 			ElectricalManager.Instance.electricalSync.PoweredDevices.Remove(electricalNodeControl);
 		}
 
-		public bool WillInteract(HandApply interaction, NetworkSide side)
-		{
-			if (!DefaultWillInteract.Default(interaction, side)) return false;
-			if (interaction.TargetObject != gameObject) return false;
-			if (interaction.HandObject != null) return false;
-			return true;
-		}
+		#endregion
 
 		public void PowerNetworkUpdate()
 		{
-			if (cashOfConnectedDevices != electricalNodeControl.Node.InData.Data.ResistanceToConnectedDevices.Count)
+			if (cacheOfConnectedDevices != electricalNodeControl.Node.InData.Data.ResistanceToConnectedDevices.Count)
 			{
-				cashOfConnectedDevices = electricalNodeControl.Node.InData.Data.ResistanceToConnectedDevices.Count;
+				cacheOfConnectedDevices = electricalNodeControl.Node.InData.Data.ResistanceToConnectedDevices.Count;
 				connectedDepartmentBatteries.Clear();
 				foreach (var device in electricalNodeControl.Node.InData.Data.ResistanceToConnectedDevices)
 				{
@@ -180,11 +178,22 @@ namespace Objects.Engineering
 			resistanceSourceModule.Resistance = (1 / CalculatingResistance);
 		}
 
+		#region Interaction
+
+		public bool WillInteract(HandApply interaction, NetworkSide side)
+		{
+			if (DefaultWillInteract.Default(interaction, side) == false) return false;
+			if (interaction.TargetObject != gameObject) return false;
+			if (interaction.HandObject != null) return false;
+			return true;
+		}
 
 		public void ServerPerformInteraction(HandApply interaction)
 		{
 			TabUpdateMessage.Send(interaction.Performer, gameObject, netTabType, TabAction.Open);
 		}
+
+		#endregion
 
 		// -----------------------------------------------------
 		//					APC STATE THINGS
@@ -244,7 +253,7 @@ namespace Objects.Engineering
 					screenDisplay.sprite = null;
 					EmergencyState = true;
 					StopRefresh();
-					SoundManager.PlayAtPosition(NoPowerSound, gameObject.WorldPosServer());
+					_ = SoundManager.PlayAtPosition(NoPowerSound, gameObject.WorldPosServer());
 					break;
 			}
 		}
@@ -286,15 +295,18 @@ namespace Objects.Engineering
 			RefreshDisplay = true;
 			StartCoroutine(Refresh());
 		}
+
 		public void RefreshOnce()
 		{
 			RefreshDisplay = false;
 			StartCoroutine(Refresh());
 		}
+
 		private void StopRefresh()
 		{
 			RefreshDisplay = false;
 		}
+
 		private IEnumerator Refresh()
 		{
 			RefreshDisplayScreen();
@@ -387,7 +399,8 @@ namespace Objects.Engineering
 
 		#endregion
 
-		//######################################## Multitool interaction ##################################
+		#region Multitool Interaction
+
 		[SerializeField]
 		private MultitoolConnectionType conType = MultitoolConnectionType.APC;
 		public MultitoolConnectionType ConType  => conType;
@@ -410,6 +423,7 @@ namespace Objects.Engineering
 			connectedDevices.Remove(apcPoweredDevice);
 			apcPoweredDevice.PowerNetworkUpdate(0.1f);
 		}
+
 		public void AddDevice(APCPoweredDevice apcPoweredDevice)
 		{
 			if (!connectedDevices.Contains(apcPoweredDevice))
@@ -446,5 +460,7 @@ namespace Objects.Engineering
 				poweredDevice.RelatedAPC = this;
 			}
 		}
+
+		#endregion
 	}
 }

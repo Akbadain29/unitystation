@@ -3,6 +3,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using Items;
+using Items.Food;
 using NaughtyAttributes;
 using Objects.Construction;
 using AddressableReferences;
@@ -67,9 +68,9 @@ namespace Systems.MobAIs
 			}
 		}
 
-		public override void Start()
+		public override void OnSpawnServer(SpawnInfo info)
 		{
-			base.Start();
+			base.OnSpawnServer(info);
 			eatFoodSound = SingletonSOSounds.Instance.EatFood;
 		}
 
@@ -194,7 +195,7 @@ namespace Systems.MobAIs
 				// Send the sound to all nearby clients
 				SoundManager.PlayNetworkedAtPos(eatFoodSound, transform.position, sourceObj: gameObject);
 
-				Despawn.ServerSingle(food.gameObject);
+				_ = Despawn.ServerSingle(food.gameObject);
 				FoodEatenEvent?.Invoke();
 			}
 			else

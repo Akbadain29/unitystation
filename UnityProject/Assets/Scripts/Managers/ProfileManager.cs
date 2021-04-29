@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using Messages.Server.AdminTools;
 using UnityEngine.Profiling;
+using UnityEngine.Profiling.Memory.Experimental;
 
 public class ProfileManager : MonoBehaviour
 {
@@ -20,19 +21,31 @@ public class ProfileManager : MonoBehaviour
 		}
 	}
 
+	private void Awake()
+	{
+		if (profileManager == null)
+		{
+			profileManager = this;
+		}
+	}
+
 	public static bool runningProfile;
+	public static bool runningMemoryProfile;
+
 	public void StartProfile(int frameCount)
 	{
-		if (runningProfile) return;
+		if (runningProfile || runningMemoryProfile) return;
 		if (frameCount > 300)
 			frameCount = 300;
 
 		runningProfile = true;
 
 		Directory.CreateDirectory("Profiles");
-		Profiler.SetAreaEnabled(ProfilerArea.Memory, true);
+		Profiler.SetAreaEnabled(ProfilerArea.CPU, true);
 		Profiler.logFile = "Profiles/" + DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss");
 		Profiler.enableBinaryLog = true;
+		Profiler.enableAllocationCallstacks = true;
+		Profiler.maxUsedMemory = 1000000000; //1GB
 		Profiler.enabled = true;
 
 		UpdateManager.Instance.Profile = true;
@@ -50,7 +63,8 @@ public class ProfileManager : MonoBehaviour
 
 		runningProfile = false;
 		Profiler.enabled = false;
-		Profiler.enableBinaryLog = true;
+		Profiler.enableBinaryLog = false;
+		Profiler.enableAllocationCallstacks = false;
 		Profiler.logFile = "";
 
 		UpdateManager.Instance.Profile = false;
@@ -59,5 +73,34 @@ public class ProfileManager : MonoBehaviour
 		{
 			ProfileMessage.SendToApplicable();
 		}
+	}
+
+	public void RunMemoryProfile(bool full = true)
+	{
+		if (runningMemoryProfile || runningProfile) return;
+		runningMemoryProfile = true;
+
+		UpdateManager.Instance.Profile = true;
+
+		Directory.CreateDirectory("Profiles");
+
+		if (full)
+		{
+			MemoryProfiler.TakeSnapshot($"Profiles/FullMemoryProfile{DateTime.Now:yyyy-MM-dd HH-mm-ss}.snap", MemoryProfileEnd,
+				CaptureFlags.ManagedObjects | CaptureFlags.NativeAllocations | CaptureFlags.NativeObjects |
+				CaptureFlags.NativeAllocationSites |  CaptureFlags.NativeStackTraces);
+
+			return;
+		}
+
+		MemoryProfiler.TakeSnapshot($"Profiles/ManagedMemoryProfile{DateTime.Now:yyyy-MM-dd HH-mm-ss}.snap", MemoryProfileEnd,
+			CaptureFlags.ManagedObjects | CaptureFlags.NativeAllocations | CaptureFlags.NativeAllocationSites
+			|  CaptureFlags.NativeStackTraces);
+	}
+
+	private void MemoryProfileEnd(string t, bool b)
+	{
+		runningMemoryProfile = false;
+		UpdateManager.Instance.Profile = false;
 	}
 }

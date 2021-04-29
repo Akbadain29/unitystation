@@ -54,19 +54,15 @@ namespace Systems.MobAIs
 		protected int fleeChance = 30;
 		protected int attackLastAttackerChance = 80;
 
-		public override void OnEnable()
+		protected override void Awake()
 		{
-			base.OnEnable();
 			hitMask = LayerMask.GetMask( "Players");
 			playersLayer = LayerMask.NameToLayer("Players");
 			mobMeleeAction = GetComponent<MobMeleeAction>();
 			coneOfSight = GetComponent<ConeOfSight>();
 			simpleAnimal = GetComponent<SimpleAnimal>();
-
-			if(CustomNetworkManager.IsServer == false) return;
-			PlayRandomSound();
+			base.Awake();
 		}
-
 
 		protected override void AIStartServer()
 		{
@@ -333,6 +329,7 @@ namespace Systems.MobAIs
 			{
 				simpleAnimal.SetDeadState(false);
 			}
+			_ = PlayRandomSound();
 		}
 
 		public override void OnDespawnServer(DespawnInfo info)

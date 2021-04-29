@@ -9,9 +9,9 @@ using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Networking;
-using Newtonsoft;
+using NaughtyAttributes;
 
-namespace Lobby
+namespace UI.CharacterCreator
 {
 	public class CharacterCustomization : MonoBehaviour
 	{
@@ -56,10 +56,8 @@ namespace Lobby
 
 		public PlayerHealthData ThisSetRace = null;
 
-
 		public CharacterSprites torsoSpriteController;
 		public CharacterSprites headSpriteController;
-
 
 		public PlayerTextureData playerTextureData;
 
@@ -67,12 +65,11 @@ namespace Lobby
 
 		[SerializeField] private List<Color> availableSkinColors;
 		private CharacterSettings currentCharacter;
+		public CharacterSettings CurrentCharacter { get { return currentCharacter; } }
 
 		public ColorPicker colorPicker;
 
-		
-
-		public Action onCloseAction;
+		public System.Action onCloseAction;
 
 		public BodyPartDropDownOrgans AdditionalOrgan;
 		public BodyPartDropDownReplaceOrgan ReplacementOrgan;
@@ -91,11 +88,9 @@ namespace Lobby
 		public List<CustomisationStorage> bodyPartCustomisationStorage = new List<CustomisationStorage>();
 		public List<ExternalCustomisation> ExternalCustomisationStorage = new List<ExternalCustomisation>();
 
-
 		public List<SpriteHandlerNorder> SurfaceSprite = new List<SpriteHandlerNorder>();
 
 		public int SelectedSpecies = 0;
-
 
 		public InputField SerialiseData;
 
@@ -114,6 +109,7 @@ namespace Lobby
 		[SerializeField] private GameObject NoCharactersError;
 		[SerializeField] private GameObject NoPreviewError;
 		[SerializeField] private GameObject GoBackButton;
+		[SerializeField] private TMPro.TextMeshProUGUI GoBackButtonText;
 
 		[SerializeField] private GameObject CharacterSelectorPage;
 		[SerializeField] private GameObject CharacterCreatorPage;
@@ -122,8 +118,8 @@ namespace Lobby
 
 		private CharacterSettings lastSettings;
 		private int currentCharacterIndex = 0;
-		private bool savingPictures = false;
 
+		#region Lifecycle
 
 		void OnEnable()
 		{
@@ -181,6 +177,8 @@ namespace Lobby
 			SurfaceSprite.Clear();
 		}
 
+		#endregion
+
 		private void ShowNoCharacterError()
 		{
 			CharacterPreviews.SetActive(false);
@@ -192,20 +190,20 @@ namespace Lobby
 			WindowName.text = "Character Settings";
 			CharacterSelectorPage.SetActive(false);
 			CharacterCreatorPage.SetActive(true);
-			GoBackButton.SetActive(true);
+			GoBackButtonText.text = "Back";
 			Cleanup();
 			LoadSettings(currentCharacter);
 			RefreshAll();
-			SoundManager.Play(SingletonSOSounds.Instance.Click01);
+			_ = SoundManager.Play(SingletonSOSounds.Instance.Click01);
 		}
 
-		public void ShowCharacterSelectorPage()
+		private void ShowCharacterSelectorPage()
 		{
 			WindowName.text = "Select your character";
+			GoBackButtonText.text = "Exit";
 			CharacterSelectorPage.SetActive(true);
 			CharacterCreatorPage.SetActive(false);
-			GoBackButton.SetActive(false);
-			SoundManager.Play(SingletonSOSounds.Instance.Click01);
+			_ = SoundManager.Play(SingletonSOSounds.Instance.Click01);
 		}
 
 		public void CreateCharacter()
@@ -214,19 +212,37 @@ namespace Lobby
 			PlayerCharacters.Add(character);
 			currentCharacterIndex = PlayerCharacters.Count() - 1;
 			currentCharacter = PlayerCharacters[currentCharacterIndex];
+			currentCharacter.Species = Race.Human.ToString();
+			OnRaceChange();
 			ShowCharacterCreator();
 			DoInitChecks();
 			RefreshAll();
-			SoundManager.Play(SingletonSOSounds.Instance.Click01);
+			_ = SoundManager.Play(SingletonSOSounds.Instance.Click01);
 		}
 
 		public void EditCharacter()
 		{
-			SoundManager.Play(SingletonSOSounds.Instance.Click01);
+			_ = SoundManager.Play(SingletonSOSounds.Instance.Click01);
 			ShowCharacterCreator();
 			RefreshAll();
 		}
 
+		public void HandleExitButton()
+		{
+			if (CharacterCreatorPage.activeSelf == true)
+			{
+				ShowCharacterSelectorPage();
+			}
+			else
+			{
+				gameObject.SetActive(false);
+			}
+		}
+
+		public void DeleteCurrentCharacter()
+		{
+			DeleteCharacterFromCharactersList(currentCharacterIndex);
+		}
 
 		/// <summary>
 		/// Responsible for refreshing all data in the character selector page.
@@ -239,7 +255,6 @@ namespace Lobby
 			SlotsUsed.text = $"{currentCharacterIndex + 1} / {PlayerCharacters.Count()}";
 			CheckPreviewImage();
 		}
-
 
 		/// <summary>
 		/// If there is no sprite, show an error.
@@ -302,8 +317,9 @@ namespace Lobby
 			RefreshSelectorData();
 			RefreshAll();
 			SaveLastCharacterIndex();
-			SoundManager.Play(SingletonSOSounds.Instance.Click01);
+			_ = SoundManager.Play(SingletonSOSounds.Instance.Click01);
 		}
+
 		public void ScrollSelectorRight()
 		{
 			if (currentCharacterIndex < PlayerCharacters.Count() - 1)
@@ -319,7 +335,7 @@ namespace Lobby
 			RefreshSelectorData();
 			RefreshAll();
 			SaveLastCharacterIndex();
-			SoundManager.Play(SingletonSOSounds.Instance.Click01);
+			_ = SoundManager.Play(SingletonSOSounds.Instance.Click01);
 		}
 
 		private void LoadSettings(CharacterSettings inCharacterSettings)
@@ -405,7 +421,6 @@ namespace Lobby
 			// }
 		}
 
-
 		public void SetUpBodyPart(BodyPart bodyPart, bool addOrganReplacement = true)
 		{
 			//bodyPart.LimbSpriteData;
@@ -413,12 +428,12 @@ namespace Lobby
 			//OpenBodyCustomisation[bodyPart.name] = new List<GameObject>();
 			ParentDictionary[bodyPart] = new List<BodyPart>();
 
-			//This spawns the eyes.
+			// This spawns the eyes.
 			SetupBodyPartsSprites(bodyPart);
 			if (bodyPart.LobbyCustomisation != null)
 			{
 				var newSprite = Instantiate(bodyPart.LobbyCustomisation, ScrollListBody.transform);
-				newSprite.SetUp(this, bodyPart, ""); //Update path
+				newSprite.SetUp(this, bodyPart, ""); // Update path
 				OpenBodyCustomisation[bodyPart.name] = (newSprite);
 			}
 
@@ -439,9 +454,8 @@ namespace Lobby
 				}
 			}
 
-
-			//Setup sprite//
-			//OpenBodySprites
+			// Setup sprite //
+			// OpenBodySprites
 			if (bodyPart?.Storage?.Populater?.Contents != null)
 			{
 				foreach (var Organ in bodyPart.Storage.Populater.Contents)
@@ -542,7 +556,7 @@ namespace Lobby
 
 		#endregion BodyPartsSprites
 
-		//First time setting up this character etc?
+		// First time setting up this character etc?
 		private void DoInitChecks()
 		{
 			if (string.IsNullOrEmpty(currentCharacter.Username))
@@ -701,10 +715,8 @@ namespace Lobby
 			}
 		}
 
+		#region Dropdown Boxes
 
-		//------------------
-		//DROPDOWN BOXES:
-		//------------------
 		private void PopulateAllDropdowns(PlayerHealthData Race)
 		{
 			//Checks what customisation settings the player's race has avaliable
@@ -726,7 +738,7 @@ namespace Lobby
 				nextDir = 0;
 			}
 
-			currentDir = (CharacterCustomization.CharacterDir) nextDir;
+			currentDir = (CharacterDir) nextDir;
 			SetRotation();
 		}
 
@@ -738,29 +750,29 @@ namespace Lobby
 				nextDir = 3;
 			}
 
-			currentDir = (CharacterCustomization.CharacterDir) nextDir;
+			currentDir = (CharacterDir) nextDir;
 			SetRotation();
 		}
 
 		public void SetRotation()
 		{
 			int referenceOffset = 0;
-			if (currentDir == CharacterCustomization.CharacterDir.down)
+			if (currentDir == CharacterDir.down)
 			{
 				referenceOffset = 0;
 			}
 
-			if (currentDir == CharacterCustomization.CharacterDir.up)
+			if (currentDir == CharacterDir.up)
 			{
 				referenceOffset = 1;
 			}
 
-			if (currentDir == CharacterCustomization.CharacterDir.right)
+			if (currentDir == CharacterDir.right)
 			{
 				referenceOffset = 2;
 			}
 
-			if (currentDir == CharacterCustomization.CharacterDir.left)
+			if (currentDir == CharacterDir.left)
 			{
 				referenceOffset = 3;
 			}
@@ -772,7 +784,7 @@ namespace Lobby
 			int i = 0;
 			foreach (var Sprite in newSprites)
 			{
-				(Sprite as SpriteHandlerNorder).gameObject.transform.SetSiblingIndex(i);
+				Sprite.gameObject.transform.SetSiblingIndex(i);
 				i++;
 			}
 
@@ -841,7 +853,6 @@ namespace Lobby
 			SetDropDownBody(ThisSetRace.Base.LegRight);
 		}
 
-
 		public void SetDropDownBody(ObjectList GameObjectBody)
 		{
 			if (GameObjectBody == null) return;
@@ -854,7 +865,6 @@ namespace Lobby
 				SubSetBodyPart(bodyPart, "");
 			}
 		}
-
 
 		public void SubSetBodyPart(BodyPart bodyPart, string path)
 		{
@@ -887,10 +897,11 @@ namespace Lobby
 			}
 		}
 
-		//------------------
-		//PLAYER ACCOUNTS:
-		//------------------
-		[NaughtyAttributes.Button()]
+		#endregion
+
+		#region Player Accounts
+
+		[Button()]
 		private void SaveData()
 		{
 			ExternalCustomisationStorage.Clear();
@@ -911,8 +922,7 @@ namespace Lobby
 			Logger.Log(JsonConvert.SerializeObject(ExternalCustomisationStorage), Category.Character);
 
 			PlayerManager.CurrentCharacterSettings = currentCharacter;
-			// TODO Consider adding await. Otherwise this causes a compile warning.
-			ServerData.UpdateCharacterProfile(currentCharacter);
+			_ = ServerData.UpdateCharacterProfile(currentCharacter);
 			SaveCharacters();
 		}
 
@@ -921,7 +931,6 @@ namespace Lobby
 		/// </summary>
 		private IEnumerator<WaitForEndOfFrame> SaveCurrentCharacterSnaps()
 		{
-			savingPictures = true;
 			Util.CaptureUI capture = snapCapturer.GetComponent<Util.CaptureUI>();
 			int dir = 0;
 			capture.Path = $"/{currentCharacter.Username}/{currentCharacter.Name}"; //Note, we need to add IDs for currentCharacters later to avoid characters who have the same name overriding themselves.
@@ -936,7 +945,6 @@ namespace Lobby
 				capture.TakeScreenShot();
 				dir++;
 			}
-			savingPictures = false;
 		}
 
 		/// <summary>
@@ -998,6 +1006,19 @@ namespace Lobby
 			}
 		}
 
+		private void DeleteCharacterFromCharactersList(int index)
+		{
+			PlayerCharacters.Remove(PlayerCharacters[index]);
+			currentCharacterIndex -= 1;
+			if(currentCharacterIndex == -1)
+			{
+				ShowNoCharacterError();
+				return;
+			}
+			SaveCharacters();
+			RefreshSelectorData();
+		}
+
 		public void SaveExternalCustomisations()
 		{
 			foreach (var Customisation in OpenCustomisation)
@@ -1021,7 +1042,6 @@ namespace Lobby
 				SubSaveBodyPart(bodyPart, "");
 			}
 		}
-
 
 		public void SaveCustomisations(CustomisationStorage CustomisationStorage,
 			BodyPartCustomisationBase CustomisationObject)
@@ -1057,13 +1077,13 @@ namespace Lobby
 			}
 		}
 
-		//------------------
-		//SAVE & CANCEL BUTTONS:
-		//------------------
+		#endregion
+
+		#region Save and Cancel Buttons
 
 		public void OnApplyBtn()
 		{
-			OnApplyBtnLogic();
+			_ = OnApplyBtnLogic();
 		}
 
 		private async Task OnApplyBtnLogic()
@@ -1082,12 +1102,10 @@ namespace Lobby
 			catch (InvalidOperationException e)
 			{
 				Logger.LogFormat("Invalid character settings: {0}", Category.Character, e.Message);
-				SoundManager.Play(SingletonSOSounds.Instance.AccessDenied);
+				_ = SoundManager.Play(SingletonSOSounds.Instance.AccessDenied);
 				DisplayErrorText(e.Message);
 				return;
 			}
-
-
 
 			PlayerCharacters[currentCharacterIndex] = currentCharacter;
 
@@ -1097,7 +1115,7 @@ namespace Lobby
 
 			SaveData();
 			ShowCharacterSelectorPage();
-			SoundManager.Play(SingletonSOSounds.Instance.Click01);
+			_ = SoundManager.Play(SingletonSOSounds.Instance.Click01);
 			gameObject.SetActive(false);
 		}
 
@@ -1107,14 +1125,15 @@ namespace Lobby
 			gameObject.SetActive(false);
 		}
 
+		#endregion
+
 		private void DisplayErrorText(string message)
 		{
 			errorLabel.text = message;
 		}
 
-		//------------------
-		//NAME:
-		//------------------
+		#region Name
+
 		private void RefreshName()
 		{
 			characterNameField.text = TruncateName(currentCharacter.Name);
@@ -1154,9 +1173,9 @@ namespace Lobby
 			return proposedName;
 		}
 
-		//------------------
-		//GENDER:
-		//------------------
+		#endregion
+
+		#region Gender
 
 		public void OnBodyTypeChange()
 		{
@@ -1201,9 +1220,10 @@ namespace Lobby
 			genderText.text = ThisBodyType.Name;
 		}
 
-		//------------------
-		//AGE:
-		//------------------
+		#endregion
+
+		#region Age
+
 		private void RefreshAge()
 		{
 			ageField.text = currentCharacter.Age.ToString();
@@ -1217,10 +1237,9 @@ namespace Lobby
 			RefreshAge();
 		}
 
+		#endregion
 
-		//------------------
-		//COLOR SELECTOR:
-		//------------------
+		#region Colour Selector
 
 		public void OpenColorPicker(Color currentColor, Action<Color> _colorChangeEvent, float yPos)
 		{
@@ -1238,11 +1257,12 @@ namespace Lobby
 		private void OnColorChange(Color newColor)
 		{
 			colorChangedEvent.Invoke(newColor);
+			RefreshAllSkinSharedSkinColoredBodyParts();
 		}
 
-		//------------------
-		//CLOTHING PREFERENCE:
-		//------------------
+		#endregion
+
+		#region Clothing Preference
 
 		public void OnClothingChange()
 		{
@@ -1262,9 +1282,9 @@ namespace Lobby
 			clothingText.text = currentCharacter.ClothingStyle.ToString();
 		}
 
-		//------------------
-		//BACKPACK PREFERENCE
-		//------------------
+		#endregion
+
+		#region Backpack Preference
 
 		public void OnBackpackChange()
 		{
@@ -1284,9 +1304,9 @@ namespace Lobby
 			backpackText.text = currentCharacter.BagStyle.ToString();
 		}
 
-		//------------------
-		//PRONOUN PREFERENCE:
-		//------------------
+		#endregion
+
+		#region Pronoun Preference
 
 		public void OnPronounChange()
 		{
@@ -1305,9 +1325,9 @@ namespace Lobby
 			pronounText.text = currentCharacter.PlayerPronoun.ToString().Replace("_", "/");
 		}
 
-		//------------------
-		//ACCENT PREFERENCE:
-		//------------------
+		#endregion
+
+		#region Accent Preference
 		// This will be a temporal thing until we have proper character traits
 
 		public void OnAccentChange()
@@ -1327,6 +1347,8 @@ namespace Lobby
 		{
 			accentText.text = currentCharacter.Speech.ToString();
 		}
+
+		#endregion
 
 		public void OnSurfaceColourChange()
 		{
@@ -1360,9 +1382,15 @@ namespace Lobby
 			currentCharacter.SkinTone = "#" + ColorUtility.ToHtmlStringRGB(CurrentSurfaceColour);
 		}
 
-		//------------------
-		//RACE PREFERENCE:
-		//------------------
+		public void RefreshAllSkinSharedSkinColoredBodyParts()
+		{
+			foreach (var Customisation in GetComponentsInChildren<BodyPartCustomisationBase>())
+			{
+				Customisation.Refresh();
+			}
+		}
+
+		#region Race Preference
 		// This will be a temporal thing until we have proper character traits
 
 		public void OnRaceChange()
@@ -1401,15 +1429,23 @@ namespace Lobby
 		private void RefreshRace()
 		{
 			raceText.text = currentCharacter.Species.ToString();
+
+			foreach (var Race in RaceSOSingleton.Instance.Races)
+			{
+				if (Race.name == currentCharacter.Species)
+				{
+					ThisSetRace = Race;
+				}
+			}
 		}
 
+		#endregion
 
 		public void InputSerialiseData()
 		{
 			SaveData();
 			SerialiseData.text = JsonConvert.SerializeObject(currentCharacter);
 		}
-
 
 		public void LoadSerialisedData()
 		{
@@ -1422,7 +1458,6 @@ namespace Lobby
 				LoadSettings(currentCharacter);
 			}
 		}
-
 
 		public enum CharacterDir
 		{

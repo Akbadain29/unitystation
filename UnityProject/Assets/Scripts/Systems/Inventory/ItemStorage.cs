@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -106,12 +105,7 @@ public class ItemStorage : MonoBehaviour, IServerLifecycle, IServerInventoryMove
 		//reclaim the space in the slot pool.
 		ItemSlot.Free(this);
 	}
-
-	private void OnDestroy()
-	{
-		//free the slots
-		ItemSlot.Free(this);
-	}
+	
 
 	public bool ServerTrySpawnAndAdd(GameObject inGameObject)
 	{
@@ -334,7 +328,7 @@ public class ItemStorage : MonoBehaviour, IServerLifecycle, IServerInventoryMove
 		{
 			if (slot.Item != null)
 			{
-				Despawn.ServerSingle(slot.Item.gameObject);
+				_ = Despawn.ServerSingle(slot.Item.gameObject);
 			}
 		}
 	}
@@ -499,6 +493,47 @@ public class ItemStorage : MonoBehaviour, IServerLifecycle, IServerInventoryMove
 	}
 
 	/// <summary>
+	/// The item slot representing an empty hand. Null if this is not a player or both are full.
+	/// Checks active hand first
+	/// </summary>
+	/// <returns></returns>
+	public ItemSlot GetEmptyHandSlot()
+	{
+		if (playerNetworkActions == null) return null;
+
+		var active = GetNamedItemSlot(playerNetworkActions.activeHand);
+
+		if (active.IsEmpty)
+		{
+			return active;
+		}
+
+		if (playerNetworkActions.activeHand == NamedSlot.leftHand)
+		{
+			var rightHand = GetNamedItemSlot(NamedSlot.rightHand);
+
+			if (rightHand.IsEmpty)
+			{
+				return rightHand;
+			}
+
+			return null;
+		}
+
+		if (playerNetworkActions.activeHand == NamedSlot.rightHand)
+		{
+			var leftHand = GetNamedItemSlot(NamedSlot.leftHand);
+
+			if (leftHand.IsEmpty)
+			{
+				return leftHand;
+			}
+		}
+
+		return null;
+	}
+
+	/// <summary>
 	/// Server only (can be called client side but has no effect).
 	/// Add this player to the list of players currently observing all slots in the slot tree
 	/// This observer will receive updates as they happen to this slot and will
@@ -549,7 +584,6 @@ public class ItemStorage : MonoBehaviour, IServerLifecycle, IServerInventoryMove
 			ServerRemoveObserverPlayer(observerPlayer);
 		}
 	}
-
 
 	/// <summary>
 	/// Checks if the indicated player is an observer of this storage

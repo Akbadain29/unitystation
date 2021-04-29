@@ -58,6 +58,8 @@ public class SoundManager : MonoBehaviour
 		}
 	}
 
+	#region Lifecycle
+
 	private void Awake()
 	{
 		Init();
@@ -78,7 +80,7 @@ public class SoundManager : MonoBehaviour
 		layerMask = LayerMask.GetMask("Walls", "Door Closed");
 	}
 
-		private void OnEnable()
+	private void OnEnable()
 	{
 		SceneManager.activeSceneChanged += OnSceneChange;
 	}
@@ -102,6 +104,8 @@ public class SoundManager : MonoBehaviour
 
 		Instance.SoundSpawns.Clear();
 	}
+
+	#endregion
 
 	/// <summary>
 	/// Get a fully loaded addressableAudioSource from the loaded cache.  This ensures that everything is ready to use.
@@ -206,7 +210,6 @@ public class SoundManager : MonoBehaviour
 		return soundSpawn;
 	}
 
-
 	/// <summary>
 	/// Trys to get a Soundspawn from NonplayingSounds, otherwise gets a new one.
 	/// This copies the AudioSource settings to the new SoundSpawn instance and returns it.
@@ -232,7 +235,6 @@ public class SoundManager : MonoBehaviour
 
 		return GetNewSoundSpawn(addressableAudioSource, audioSource, soundSpawnToken);
 	}
-
 
 	/// <summary>
 	/// Plays a sound for all clients.
@@ -340,9 +342,8 @@ public class SoundManager : MonoBehaviour
 		AudioSourceParameters audioSourceParameters = new AudioSourceParameters(), bool polyphonic = false, bool global = true,
 		ShakeParameters shakeParameters = new ShakeParameters(), GameObject sourceObj = null)
 	{
-		PlayNetworkedAtPosAsync(addressableAudioSource, worldPos, audioSourceParameters, polyphonic,
+		_ = PlayNetworkedAtPosAsync(addressableAudioSource, worldPos, audioSourceParameters, polyphonic,
 			global, shakeParameters, sourceObj);
-		return;
 	}
 
 	/// <summary>
@@ -364,11 +365,9 @@ public class SoundManager : MonoBehaviour
 		GameObject sourceObj = null)
 	{
 		AddressableAudioSource addressableAudioSource = addressableAudioSources.PickRandom();
-		PlayNetworkedAtPosAsync(addressableAudioSource, worldPos, audioSourceParameters, polyphonic,
+		_ = PlayNetworkedAtPosAsync(addressableAudioSource, worldPos, audioSourceParameters, polyphonic,
 			global, shakeParameters, sourceObj);
-		return;
 	}
-
 
 	/// <summary>
 	/// Play sound for particular player.
@@ -562,10 +561,8 @@ public class SoundManager : MonoBehaviour
 			}
 		}
 
-		PlayAtPosition(addressableAudioSources, worldPos, soundSpawnToken, polyphonic, isGlobal, netId,
-			audioSourceParameters);
+		_ = PlayAtPosition(addressableAudioSources, worldPos, soundSpawnToken, polyphonic, isGlobal, netId, audioSourceParameters);
 	}
-
 
 	/// <summary>
 	/// Play sound locally at given world position.
