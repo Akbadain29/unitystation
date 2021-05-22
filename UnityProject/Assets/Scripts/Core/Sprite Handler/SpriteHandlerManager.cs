@@ -1,57 +1,77 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Data.Common;
 using Messages.Client.SpriteMessages;
 using Messages.Server.SpritesMessages;
 using Mirror;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class SpriteHandlerManager : NetworkBehaviour
 {
-	//public static int AvailableID = 1;
-
 	private static SpriteHandlerManager spriteHandlerManager;
-	public static SpriteHandlerManager Instance
-	{
-		get
-		{
-			if (!spriteHandlerManager)
-			{
-				spriteHandlerManager = FindObjectOfType<SpriteHandlerManager>();
-			}
+	public static SpriteHandlerManager Instance => spriteHandlerManager;
 
-			return spriteHandlerManager;
-		}
-	}
-
-
-
-	public Dictionary<NetworkIdentity, Dictionary<string, SpriteHandler>> PresentSprites =
+	public static Dictionary<NetworkIdentity, Dictionary<string, SpriteHandler>> PresentSprites =
 		new Dictionary<NetworkIdentity, Dictionary<string, SpriteHandler>>();
 
 	public Dictionary<SpriteHandler, SpriteChange> QueueChanges = new Dictionary<SpriteHandler, SpriteChange>();
 
 	public Dictionary<SpriteHandler, SpriteChange> NewClientChanges = new Dictionary<SpriteHandler, SpriteChange>();
 
+	private void Awake()
+	{
+		if (spriteHandlerManager == null)
+		{
+			spriteHandlerManager = this;
+		}
+		else
+		{
+			Destroy(this);
+		}
+	}
 
+	private void OnEnable()
+	{
+		SceneManager.activeSceneChanged += OnRoundRestart;
+	}
 
+	private void OnDisable()
+	{
+		SceneManager.activeSceneChanged -= OnRoundRestart;
+	}
+
+	void OnRoundRestart(Scene oldScene, Scene newScene)
+	{
+		QueueChanges.Clear();
+		NewClientChanges.Clear();
+		PresentSprites.Clear();
+	}
 
 	public static void UnRegisterHandler(NetworkIdentity networkIdentity, SpriteHandler spriteHandler)
 	{
 		if (spriteHandler == null) return;
 		if (networkIdentity == null)
 		{
-			Logger.LogError(" RegisterHandler networkIdentity is null on  > " + spriteHandler.transform.parent.name,
-				Category.Sprites);
-			return;
+			if (spriteHandler?.transform?.parent != null)
+			{
+				Logger.LogError(" RegisterHandler networkIdentity is null on  > " + spriteHandler.transform.parent.name,
+					Category.Sprites);
+				return;
+			}
+			else
+			{
+				Logger.LogError(" RegisterHandler networkIdentity is null on  ? ",
+					Category.Sprites);
+			}
+
 		}
 
-		if (Instance.PresentSprites.ContainsKey(networkIdentity))
+		if (PresentSprites.ContainsKey(networkIdentity))
 		{
-			if (Instance.PresentSprites[networkIdentity].ContainsKey(spriteHandler.name))
+			if (PresentSprites[networkIdentity].ContainsKey(spriteHandler.name))
 			{
-				Instance.PresentSprites[networkIdentity].Remove(spriteHandler.name);
+				PresentSprites[networkIdentity].Remove(spriteHandler.name);
 			}
 		}
 	}
@@ -61,20 +81,28 @@ public class SpriteHandlerManager : NetworkBehaviour
 	{
 		if (networkIdentity == null)
 		{
-			Logger.LogError(" RegisterHandler networkIdentity is null on  > " + spriteHandler.transform.parent.name,
-				Category.Sprites);
-			return;
+			if (spriteHandler?.transform?.parent != null)
+			{
+				Logger.LogError(" RegisterHandler networkIdentity is null on  > " + spriteHandler.transform.parent.name,
+					Category.Sprites);
+				return;
+			}
+			else
+			{
+				Logger.LogError(" RegisterHandler networkIdentity is null on  ? ",
+					Category.Sprites);
+			}
 		}
 
 
-		if (Instance.PresentSprites.ContainsKey(networkIdentity) == false)
+		if (PresentSprites.ContainsKey(networkIdentity) == false)
 		{
-			Instance.PresentSprites[networkIdentity] = new Dictionary<string, SpriteHandler>();
+			PresentSprites[networkIdentity] = new Dictionary<string, SpriteHandler>();
 		}
 
-		if (Instance.PresentSprites[networkIdentity].ContainsKey(spriteHandler.name))
+		if (PresentSprites[networkIdentity].ContainsKey(spriteHandler.name))
 		{
-			if (Instance.PresentSprites[networkIdentity][spriteHandler.name] != spriteHandler)
+			if (PresentSprites[networkIdentity][spriteHandler.name] != spriteHandler)
 			{
 				Logger.LogError(
 					"SpriteHandler has the same name as another SpriteHandler on the game object > " + spriteHandler.name + " On parent > " +
@@ -82,19 +110,7 @@ public class SpriteHandlerManager : NetworkBehaviour
 			}
 		}
 
-		Instance.PresentSprites[networkIdentity][spriteHandler.name] = spriteHandler;
-	}
-
-
-	// Start is called before the first frame update
-	void Start()
-	{
-		//AvailableID = 1;
-		//foreach (var Product in SpriteCatalogue.Instance.Catalogue)
-		//{
-			//Product.ID = AvailableID;
-			//AvailableID++;
-		//}
+		PresentSprites[networkIdentity][spriteHandler.name] = spriteHandler;
 	}
 
 	public void UpdateNewPlayer(NetworkConnection requestedBy)

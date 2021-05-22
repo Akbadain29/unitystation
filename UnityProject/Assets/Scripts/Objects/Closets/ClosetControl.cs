@@ -24,6 +24,11 @@ namespace Objects
 				 " locker spawns.")]
 		[SerializeField]
 		private SpawnableList initialContents = null;
+		public SpawnableList InitialContents => initialContents;
+
+		[Tooltip("If this has initial contents, should it spawn on round start rather than first open?")]
+		[SerializeField]
+		private bool alwaysSpawnContents;
 
 		[Tooltip("Lock light status indicator component")]
 		[SerializeField]
@@ -172,6 +177,10 @@ namespace Objects
 		private RegisterCloset registerTile;
 		private PushPull pushPull;
 
+		//This is used so that contents are only spawned when first opened to reduce the amount of gameobjects
+		private bool contentsSpawned;
+		public bool ContentsSpawned => contentsSpawned;
+
 		private Matrix Matrix => registerTile.Matrix;
 		private PushPull PushPull {
 			get {
@@ -227,18 +236,9 @@ namespace Objects
 
 		public virtual void OnSpawnServer(SpawnInfo info)
 		{
-			if (initialContents != null)
+			if (alwaysSpawnContents)
 			{
-				//populate initial contents on spawn
-				var result = initialContents.SpawnAt(SpawnDestination.At(gameObject));
-				foreach (var spawned in result.GameObjects)
-				{
-					var objBehavior = spawned.GetComponent<ObjectBehaviour>();
-					if (objBehavior != null)
-					{
-						ServerAddInternalItem(objBehavior);
-					}
-				}
+				TrySpawnContents(true);
 			}
 
 			//always spawn closed, all lockable closets locked
@@ -256,6 +256,33 @@ namespace Objects
 			if (info.SpawnType == SpawnType.Mapped)
 			{
 				CloseItemHandling();
+			}
+		}
+
+		/// <summary>
+		/// Spawns the initial contents when needed, not always on game start so that theres less game objects
+		/// </summary>
+		public void TrySpawnContents(bool hideContents = false)
+		{
+			if(contentsSpawned) return;
+			contentsSpawned = true;
+
+			//Null check after setting true so we only do the null check once not every opening
+			if (initialContents == null) return;
+
+			//populate initial contents
+			var result = initialContents.SpawnAt(SpawnDestination.At(gameObject));
+
+			//Only hide if on spawn as the closet will be closed
+			if(hideContents == false) return;
+
+			foreach (var spawned in result.GameObjects)
+			{
+				var objBehavior = spawned.GetComponent<ObjectBehaviour>();
+				if (objBehavior != null)
+				{
+					ServerAddInternalItem(objBehavior);
+				}
 			}
 		}
 
@@ -677,6 +704,9 @@ namespace Objects
 			}
 			else
 			{
+				//Try spawn contents if they dont exist yet
+				TrySpawnContents();
+
 				OpenItemHandling();
 				OpenPlayerHandling();
 			}

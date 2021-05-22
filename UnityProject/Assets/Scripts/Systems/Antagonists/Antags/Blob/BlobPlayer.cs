@@ -21,8 +21,6 @@ namespace Blob
 	/// </summary>
 	public class BlobPlayer : NetworkBehaviour
 	{
-		[SerializeField] private AddressableAudioSource Outbreak5 = null;
-
 		[SerializeField] private GameObject blobCorePrefab = null;
 		[SerializeField] private GameObject blobNodePrefab = null;
 		[SerializeField] private GameObject blobResourcePrefab = null;
@@ -255,7 +253,7 @@ namespace Blob
 			UpdateManager.Remove(CallbackType.PERIODIC_UPDATE, PeriodicUpdate);
 		}
 
-		private void Start()
+		private void Awake()
 		{
 			playerSync = GetComponent<PlayerSync>();
 			registerPlayer = GetComponent<RegisterPlayer>();
@@ -336,7 +334,7 @@ namespace Blob
 					string.Format(ReportTemplates.BioHazard,
 						"Confirmed outbreak of level 5 biohazard aboard the station. All personnel must contain the outbreak."),
 					MatrixManager.MainStationMatrix);
-				_ = SoundManager.PlayNetworked(Outbreak5);
+				_ = SoundManager.PlayNetworked(SingletonSOSounds.Instance.Outbreak5Announcement);
 			}
 
 			if (rerollTimer > 300f)
@@ -438,13 +436,12 @@ namespace Blob
 		[Client]
 		private void SyncTurnOnClientLight(bool oldVar, bool newVar)
 		{
-			if (newVar == false)return;
+			clientLight = newVar;
+			if (newVar == false) return;
 
+			SetBlobUI();
 			TurnOnClientLight();
 			playerScript.IsPlayerSemiGhost = true;
-			uiBlob = UIManager.Display.hudBottomBlob.GetComponent<UI_Blob>();
-			uiBlob.blobPlayer = this;
-			uiBlob.controller = GetComponent<BlobMouseInputController>();
 		}
 
 		[Client]
@@ -467,34 +464,58 @@ namespace Blob
 		[Client]
 		private void SyncResources(float oldVar, float newVar)
 		{
+			SetBlobUI();
+
+			resources = newVar;
 			uiBlob.resourceText.text = Mathf.FloorToInt(newVar).ToString();
 		}
 
 		[Client]
 		private void SyncHealth(float oldVar, float newVar)
 		{
+			SetBlobUI();
+
+			health = newVar;
 			uiBlob.healthText.text = newVar.ToString();
 		}
 
 		[Client]
 		private void SyncNumOfBlobTiles(int oldVar, int newVar)
 		{
+			SetBlobUI();
+
+			numOfBlobTiles = newVar;
 			uiBlob.numOfBlobTilesText.text = newVar.ToString();
 		}
 
 		[Client]
 		private void SyncStrainRerolls(int oldVar, int newVar)
 		{
+			SetBlobUI();
+
+			strainRerolls = newVar;
 			uiBlob.strainRerollsText.text = newVar.ToString();
 		}
 
 		[Client]
 		private void SyncStrainIndex(int oldVar, int newVar)
 		{
+			SetBlobUI();
+
 			strainIndex = newVar;
 			clientCurrentStrain = blobStrains[newVar];
 			uiBlob.UpdateStrainInfo();
 			TurnOnClientLight();
+		}
+
+		private void SetBlobUI()
+		{
+			if (uiBlob == null)
+			{
+				uiBlob = UIManager.Display.hudBottomBlob.GetComponent<UI_Blob>();
+				uiBlob.blobPlayer = this;
+				uiBlob.controller = GetComponent<BlobMouseInputController>();
+			}
 		}
 
 		#endregion
