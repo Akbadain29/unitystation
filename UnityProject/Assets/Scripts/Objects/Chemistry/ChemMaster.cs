@@ -75,7 +75,10 @@ namespace Chemistry
 				}
 				if (Container.CurrentReagentMix.reagents[reagent] <= 0)
 				{
-					Container.CurrentReagentMix.reagents.m_dict.Remove(reagent);
+					lock (Container.CurrentReagentMix.reagents)
+					{
+						Container.CurrentReagentMix.reagents.m_dict.Remove(reagent);
+					}
 				}
 				Logger.LogTrace($"AFTER|| Mix:{Container.CurrentReagentMix}", Category.Chemistry);
 			}
@@ -97,7 +100,10 @@ namespace Chemistry
 			//remove listing if empty
 			if (tempTransfer.reagents[reagent] <= 0)
 			{
-				tempTransfer.reagents.m_dict.Remove(reagent);
+				lock (tempTransfer.reagents)
+				{
+					tempTransfer.reagents.m_dict.Remove(reagent);
+				}
 			}
 
 			TransferMixToBuffer(tempTransfer);
@@ -199,7 +205,8 @@ namespace Chemistry
 				productContainer.OnReagentMixChanged?.Invoke();
 
 				//Give it some love
-				product.GetComponent<ItemAttributesV2>().ServerSetArticleName(newName);
+				product.GetComponent<ItemAttributesV2>().ServerSetArticleName($"{newName}" +
+					$" {product.GetComponent<ItemAttributesV2>().InitialName}");
 			}
 			ClearBuffer();
 			TransferMixToBuffer(temp);
@@ -285,6 +292,7 @@ namespace Chemistry
 		/// <param name="subject"></param>
 		public void EjectContainer(ConnectedPlayer subject)
 		{
+			containerSlot.Item.GetComponent<ReagentContainer>().OnReagentMixChanged.Invoke();
 			var bestSlot = GetBestSlot(containerSlot.ItemObject, subject);
 			if (!Inventory.ServerTransfer(containerSlot, bestSlot))
 			{
@@ -293,7 +301,7 @@ namespace Chemistry
 			ClearBuffer();
 			UpdateGui();
 		}
-		
+
 		public bool WillInteract(HandApply interaction, NetworkSide side)
 		{
 			if (!DefaultWillInteract.Default(interaction, side)) return false;
