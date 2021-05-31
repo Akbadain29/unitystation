@@ -24,7 +24,7 @@ These files are stored in **UnityProject\Assets\Scripts\UI** this file is what r
 
 #### Tips
 
-To be expanded. Include Netpage assignment variable declaration, ultilisation of UpdateDisplay(), declaration in NetTab.cs for NetTabType enumerical  and communication to backend script.
+To be expanded. Include Netpage assignment variable declaration, utilisation of UpdateDisplay(), declaration in NetTab.cs for NetTabType enumerical  and communication to backend script.
 
 ### Backend
 
