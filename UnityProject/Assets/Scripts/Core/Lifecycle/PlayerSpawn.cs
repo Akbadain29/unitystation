@@ -64,14 +64,14 @@ public static class PlayerSpawn
 			message += " Invalid player skin tone.";
 			isOk = false;
 		}
-		*/
+
 
 		if(ServerValidations.HasIllegalCharacterName(request.CharacterSettings.Name))
 		{
 			message += " Invalid player character name.";
 			isOk = false;
 		}
-
+		*/
 		if(ServerValidations.HasIllegalCharacterAge(request.CharacterSettings.Age))
 		{
 			message += " Invalid character age.";
@@ -509,7 +509,13 @@ public static class PlayerSpawn
 			TriggerEventMessage.SendTo(newBody, eventType);
 
 			//can observe their new inventory
-			newBody.GetComponent<DynamicItemStorage>()?.ServerAddObserverPlayer(newBody);
+			var dynamicItemStorage = newBody.GetComponent<DynamicItemStorage>();
+			if (dynamicItemStorage != null)
+			{
+				dynamicItemStorage.ServerAddObserverPlayer(newBody);
+				PlayerPopulateInventoryUIMessage.Send(dynamicItemStorage, newBody);
+			}
+
 		}
 
 		var playerScript = newBody.GetComponent<PlayerScript>();

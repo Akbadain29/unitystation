@@ -28,7 +28,9 @@ public class UI_SlotManager : MonoBehaviour
 
 	public void Start()
 	{
-		CustomNetworkManager.Instance.OnClientDisconnected.AddListener(RemoveAll);
+		EventManager.AddHandler(Event.LoggedOut, RemoveAll);
+		EventManager.AddHandler(Event.PlayerSpawned, RemoveAll);
+		EventManager.AddHandler(Event.RoundEnded, RemoveAll);
 	}
 
 	public void AddContainer(IDynamicItemSlotS bodyPartUISlots)
@@ -128,6 +130,7 @@ public class UI_SlotManager : MonoBehaviour
 
 	public void RemoveAll()
 	{
+		if (this == null) return;
 		foreach (var Inslots in BodyPartToSlot.Keys.ToArray())
 		{
 			foreach (var Characteristics in Inslots.Storage)
